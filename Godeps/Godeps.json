@@ -1,0 +1,75 @@
+{
+	"ImportPath": "github.com/btasdoven/quickfixwebclient",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v78",
+	"Deps": [
+		{
+			"ImportPath": "github.com/FlashBoys/go-finance",
+			"Rev": "b13adefa4acf39e809c72592925f7dda43ba147c"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/config",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/datadictionary",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/enum",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/field",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/fix42",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/fix42/executionreport",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/fix42/marketdatarequest",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/fix42/newordersingle",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/internal",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/quickfixgo/quickfix/tag",
+			"Comment": "v0.5.0-74-g4ec17e93",
+			"Rev": "4ec17e93103253252961cf408524b072a9b435b3"
+		},
+		{
+			"ImportPath": "github.com/shopspring/decimal",
+			"Rev": "d6f52241f332c63811249bd79a522406bea1a7c9"
+		}
+	]
+}
