@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"path"
+	"os"
+	"os/signal"
+	"strconv"
 
 	"github.com/quickfixgo/quickfix"
 	"github.com/quickfixgo/quickfix/enum"
@@ -18,9 +21,6 @@ import (
     fix42mdr "github.com/quickfixgo/quickfix/fix42/marketdatarequest"
     fix42md  "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh"
 
-	"os"
-	"os/signal"
-	"strconv"
 )
 
 type executor struct {
@@ -81,6 +81,8 @@ func (e *executor) OnFIX42MarketDataRequest(msg fix42mdr.MarketDataRequest, sess
 
 	stock, _ := finance.GetQuote(symbol)
 
+	fmt.Printf("Stock: %+v\n", stock)
+
     noMDEntryTypes, _ := msg.GetNoMDEntryTypes()
 	noMDEntries := fix42md.NewNoMDEntriesRepeatingGroup()
 
@@ -91,22 +93,13 @@ func (e *executor) OnFIX42MarketDataRequest(msg fix42mdr.MarketDataRequest, sess
 		switch noMDEntryType {
 		case enum.MDEntryType_BID:
 			noMDEntries.Get(i).SetMDEntryPx(decimal.Decimal(stock.Bid), 5)
-			noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(5), 5)
+			noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(float64(stock.BidSize)), 5)
 		case enum.MDEntryType_OFFER:
 			noMDEntries.Get(i).SetMDEntryPx(decimal.Decimal(stock.Ask), 5)
-			noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(6), 5)
+			noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(float64(stock.AskSize)), 5)
 		case enum.MDEntryType_TRADE:
 			noMDEntries.Get(i).SetMDEntryPx(decimal.Decimal(stock.LastTradePrice), 5)
-			noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(13), 5)
-		default:
-			noMDEntries.Get(i).SetMDEntryPx(decimal.NewFromFloat(199), 5)
-		}
-
-		noMDEntries.Get(i).SetMDEntryPx(decimal.NewFromFloat(float64(10*(i+2))), 5)
-
-		if noMDEntryType == enum.MDEntryType_TRADE ||
-			noMDEntryType == enum.MDEntryType_OFFER ||
-			noMDEntryType == enum.MDEntryType_BID {
+			noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(float64(stock.LastTradeSize)), 5)
 		}
 	}
 

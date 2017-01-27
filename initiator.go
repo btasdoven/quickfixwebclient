@@ -59,7 +59,7 @@ func (e Initiator) FromApp(msg *quickfix.Message, sessionID quickfix.SessionID) 
 }
 
 func querySenderCompID() field.SenderCompIDField {
-	return field.NewSenderCompID("WEBUITEST")
+	return field.NewSenderCompID("WEBUI")
 }
 
 func queryTargetCompID() field.TargetCompIDField {
@@ -110,11 +110,10 @@ func queryMarketDataRequest42() fix42mdr.MarketDataRequest {
 	entryTypes.Add().SetMDEntryType(enum.MDEntryType_BID)
 	entryTypes.Add().SetMDEntryType(enum.MDEntryType_OFFER)
 	entryTypes.Add().SetMDEntryType(enum.MDEntryType_TRADE)
-	entryTypes.Add().SetMDEntryType(enum.MDEntryType_TRADE_VOLUME)
 	request.SetNoMDEntryTypes(entryTypes)
 
 	relatedSym := fix42mdr.NewNoRelatedSymRepeatingGroup()
-	relatedSym.Add().SetSymbol("LNUX")
+	relatedSym.Add().SetSymbol("MSFT")
 	request.SetNoRelatedSym(relatedSym)
 
 	queryHeader(request.Header)
