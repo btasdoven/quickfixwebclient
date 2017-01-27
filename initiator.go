@@ -1,18 +1,18 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"path"
+    "flag"
+    "fmt"
+    "os"
+    "path"
     "time"
 
-	"github.com/quickfixgo/quickfix/field"
-	"github.com/quickfixgo/quickfix/enum"
-	"github.com/quickfixgo/quickfix"
+    "github.com/quickfixgo/quickfix/field"
+    "github.com/quickfixgo/quickfix/enum"
+    "github.com/quickfixgo/quickfix"
     
     fix42md "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh"
-	fix42mdr "github.com/quickfixgo/quickfix/fix42/marketdatarequest"
+    fix42mdr "github.com/quickfixgo/quickfix/fix42/marketdatarequest"
 )
 
 //Initiator implements the quickfix.Application interface
@@ -22,152 +22,152 @@ type Initiator struct {
 
 //OnCreate implemented as part of Application interface
 func (e Initiator) OnCreate(sessionID quickfix.SessionID) {
-	return
+    return
 }
 
 //OnLogon implemented as part of Application interface
 func (e Initiator) OnLogon(sessionID quickfix.SessionID) {
-	return
+    return
 }
 
 //OnLogout implemented as part of Application interface
 func (e Initiator) OnLogout(sessionID quickfix.SessionID) {
-	return
+    return
 }
 
 //FromAdmin implemented as part of Application interface
 func (e Initiator) FromAdmin(msg *quickfix.Message, sessionID quickfix.SessionID) (reject quickfix.MessageRejectError) {
-	return
+    return
 }
 
 //ToAdmin implemented as part of Application interface
 func (e Initiator) ToAdmin(msg *quickfix.Message, sessionID quickfix.SessionID) {
-	return
+    return
 }
 
 //ToApp implemented as part of Application interface
 func (e Initiator) ToApp(msg *quickfix.Message, sessionID quickfix.SessionID) (err error) {
-	fmt.Printf("Sending %v\n", msg)
-	return
+    fmt.Printf("Sending %v\n", msg)
+    return
 }
 
 //FromApp implemented as part of Application interface. This is the callback for all Application level messages from the counter party.
 func (e Initiator) FromApp(msg *quickfix.Message, sessionID quickfix.SessionID) (reject quickfix.MessageRejectError) {
-	fmt.Printf("Received %v\n", msg)
+    fmt.Printf("Received %v\n", msg)
     e.Route(msg, sessionID)
-	return
+    return
 }
 
 func querySenderCompID() field.SenderCompIDField {
-	return field.NewSenderCompID("WEBUI")
+    return field.NewSenderCompID("WEBUI")
 }
 
 func queryTargetCompID() field.TargetCompIDField {
-	return field.NewTargetCompID("FIXIMULATOR")
+    return field.NewTargetCompID("FIXIMULATOR")
 }
 
 type header interface {
-	Set(f quickfix.FieldWriter) *quickfix.FieldMap
+    Set(f quickfix.FieldWriter) *quickfix.FieldMap
 }
 
 func queryHeader(h header) {
-	h.Set(querySenderCompID())
-	h.Set(queryTargetCompID())
-	//h.Set(queryTargetSubID())
+    h.Set(querySenderCompID())
+    h.Set(queryTargetCompID())
+    //h.Set(queryTargetSubID())
 }
 
 func (e *Initiator) OnFIX42MarketData(msg fix42md.MarketDataSnapshotFullRefresh, sessionID quickfix.SessionID) (reject quickfix.MessageRejectError) {
-	symbol, _ := msg.GetSymbol()
+    symbol, _ := msg.GetSymbol()
 
-	noMDEntries, _ := msg.GetNoMDEntries()
+    noMDEntries, _ := msg.GetNoMDEntries()
 
-	for i := 0; i < noMDEntries.Len(); i++ {
-		entry := noMDEntries.Get(i)
-		entryType, _ := entry.GetMDEntryType();
-		entryPx, _ := entry.GetMDEntryPx()
-		entrySize, _ := entry.GetMDEntrySize()
+    for i := 0; i < noMDEntries.Len(); i++ {
+        entry := noMDEntries.Get(i)
+        entryType, _ := entry.GetMDEntryType();
+        entryPx, _ := entry.GetMDEntryPx()
+        entrySize, _ := entry.GetMDEntrySize()
 
-		fmt.Printf("%v: %v, %v %v\n", symbol, enum.MDEntryType(entryType), entryPx, entrySize)
-	}
+        fmt.Printf("%v: %v, %v %v\n", symbol, enum.MDEntryType(entryType), entryPx, entrySize)
+    }
 
-	return
+    return
 }
 
 func (e Initiator) QueryMarketDataRequest() error {
-	req := queryMarketDataRequest42()
-	return quickfix.Send(req)
+    req := queryMarketDataRequest42()
+    return quickfix.Send(req)
 }
 
 func queryMarketDataRequest42() fix42mdr.MarketDataRequest {
-	request := fix42mdr.New(field.NewMDReqID("MARKETDATAID"),
-		field.NewSubscriptionRequestType(enum.SubscriptionRequestType_SNAPSHOT),
-		field.NewMarketDepth(0),
-	)
+    request := fix42mdr.New(field.NewMDReqID("MARKETDATAID"),
+        field.NewSubscriptionRequestType(enum.SubscriptionRequestType_SNAPSHOT),
+        field.NewMarketDepth(0),
+    )
 
-	request.SetMDUpdateType(enum.MDUpdateType_FULL_REFRESH)
+    request.SetMDUpdateType(enum.MDUpdateType_FULL_REFRESH)
 
-	entryTypes := fix42mdr.NewNoMDEntryTypesRepeatingGroup()
-	entryTypes.Add().SetMDEntryType(enum.MDEntryType_BID)
-	entryTypes.Add().SetMDEntryType(enum.MDEntryType_OFFER)
-	entryTypes.Add().SetMDEntryType(enum.MDEntryType_TRADE)
-	request.SetNoMDEntryTypes(entryTypes)
+    entryTypes := fix42mdr.NewNoMDEntryTypesRepeatingGroup()
+    entryTypes.Add().SetMDEntryType(enum.MDEntryType_BID)
+    entryTypes.Add().SetMDEntryType(enum.MDEntryType_OFFER)
+    entryTypes.Add().SetMDEntryType(enum.MDEntryType_TRADE)
+    request.SetNoMDEntryTypes(entryTypes)
 
-	relatedSym := fix42mdr.NewNoRelatedSymRepeatingGroup()
-	relatedSym.Add().SetSymbol("MSFT")
-	request.SetNoRelatedSym(relatedSym)
+    relatedSym := fix42mdr.NewNoRelatedSymRepeatingGroup()
+    relatedSym.Add().SetSymbol("MSFT")
+    request.SetNoRelatedSym(relatedSym)
 
-	queryHeader(request.Header)
-	return request
+    queryHeader(request.Header)
+    return request
 }
 
 func NewInitiator() (app Initiator) {
-	flag.Parse()
+    flag.Parse()
 
-	cfgFileName := path.Join("config", "initiator.cfg")
-	if flag.NArg() > 0 {
-		cfgFileName = flag.Arg(0)
-	}
+    cfgFileName := path.Join("config", "initiator.cfg")
+    if flag.NArg() > 0 {
+        cfgFileName = flag.Arg(0)
+    }
 
-	cfg, err := os.Open(cfgFileName)
-	if err != nil {
-		fmt.Printf("Error opening %v, %v\n", cfgFileName, err)
-		return
-	}
+    cfg, err := os.Open(cfgFileName)
+    if err != nil {
+        fmt.Printf("Error opening %v, %v\n", cfgFileName, err)
+        return
+    }
 
-	appSettings, err := quickfix.ParseSettings(cfg)
-	if err != nil {
-		fmt.Println("Error reading cfg,", err)
-		return
-	}
+    appSettings, err := quickfix.ParseSettings(cfg)
+    if err != nil {
+        fmt.Println("Error reading cfg,", err)
+        return
+    }
 
-	app = Initiator{MessageRouter: quickfix.NewMessageRouter()}
-	app.AddRoute(fix42md.Route(app.OnFIX42MarketData))
+    app = Initiator{MessageRouter: quickfix.NewMessageRouter()}
+    app.AddRoute(fix42md.Route(app.OnFIX42MarketData))
 
-	fileLogFactory, err := quickfix.NewFileLogFactory(appSettings)
+    fileLogFactory, err := quickfix.NewFileLogFactory(appSettings)
 
-	if err != nil {
-		fmt.Println("Error creating file log factory,", err)
-		return
-	}
+    if err != nil {
+        fmt.Println("Error creating file log factory,", err)
+        return
+    }
 
-	initiator, err := quickfix.NewInitiator(app, quickfix.NewMemoryStoreFactory(), appSettings, fileLogFactory)
-	if err != nil {
-		fmt.Printf("Unable to create Initiator: %s\n", err)
-		return
-	}
+    initiator, err := quickfix.NewInitiator(app, quickfix.NewMemoryStoreFactory(), appSettings, fileLogFactory)
+    if err != nil {
+        fmt.Printf("Unable to create Initiator: %s\n", err)
+        return
+    }
 
-	initiator.Start()
+    initiator.Start()
 
-	for {
-		err = app.QueryMarketDataRequest()
+    for {
+        err = app.QueryMarketDataRequest()
 
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
+        if err != nil {
+            fmt.Printf("%v\n", err)
+        }
 
-		time.Sleep(5000 * time.Millisecond)
-	}
+        time.Sleep(5000 * time.Millisecond)
+    }
 
-	initiator.Stop()
-	return app
+    initiator.Stop()
+    return app
 }
