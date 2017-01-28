@@ -81,7 +81,7 @@ func (e *executor) OnFIX42MarketDataRequest(msg fix42mdr.MarketDataRequest, sess
 
     stock, _ := finance.GetQuote(symbol)
 
-    fmt.Printf("Stock: %+v\n", stock)
+    fmt.Printf("\tStock: %+v\n", stock)
 
     noMDEntryTypes, _ := msg.GetNoMDEntryTypes()
     noMDEntries := fix42md.NewNoMDEntriesRepeatingGroup()
@@ -107,7 +107,7 @@ func (e *executor) OnFIX42MarketDataRequest(msg fix42mdr.MarketDataRequest, sess
     md.SetMDReqID(mdReqID)    
     md.SetNoMDEntries(noMDEntries)    
 
-    fmt.Printf("[SERVER] - Sending %+v", md)
+    fmt.Printf("\tSending %+v", md)
     quickfix.SendToTarget(md, sessionID)
 
     return
