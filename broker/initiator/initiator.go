@@ -1,4 +1,4 @@
-package main
+package initiator
 
 import (
     "flag"
@@ -7,11 +7,9 @@ import (
     "path"
 
     "github.com/quickfixgo/quickfix/field"
-    "github.com/quickfixgo/quickfix/enum"
     "github.com/quickfixgo/quickfix"
     
     fix42md "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh"
-    fix42mdr "github.com/quickfixgo/quickfix/fix42/marketdatarequest"
 )
 
 //Initiator implements the quickfix.Application interface
@@ -24,7 +22,7 @@ type Initiator struct {
 func NewInitiator() (app Initiator) {
     flag.Parse()
 
-    cfgFileName := path.Join("config", "Initiator.cfg")
+    cfgFileName := path.Join("config", "initiator.cfg")
     if flag.NArg() > 0 {
         cfgFileName = flag.Arg(0)
     }
@@ -121,41 +119,4 @@ func queryHeader(h header) {
     h.Set(querySenderCompID())
     h.Set(queryTargetCompID())
     //h.Set(queryTargetSubID())
-}
-
-func (e *Initiator) OnFIX42MarketData(msg fix42md.MarketDataSnapshotFullRefresh, sessionID quickfix.SessionID) (reject quickfix.MessageRejectError) {
-    reqId, _ := msg.GetMDReqID()
-    e.Callbacks[reqId] <- msg
-    return
-}
-
-func (e Initiator) queryMarketDataRequest42(requestId string, symbol string) fix42md.MarketDataSnapshotFullRefresh {
-    request := fix42mdr.New(field.NewMDReqID(requestId),
-        field.NewSubscriptionRequestType(enum.SubscriptionRequestType_SNAPSHOT),
-        field.NewMarketDepth(0),
-    )
-
-    request.SetMDUpdateType(enum.MDUpdateType_FULL_REFRESH)
-
-    entryTypes := fix42mdr.NewNoMDEntryTypesRepeatingGroup()
-    entryTypes.Add().SetMDEntryType(enum.MDEntryType_BID)
-    entryTypes.Add().SetMDEntryType(enum.MDEntryType_OFFER)
-    entryTypes.Add().SetMDEntryType(enum.MDEntryType_TRADE)
-    request.SetNoMDEntryTypes(entryTypes)
-
-    relatedSym := fix42mdr.NewNoRelatedSymRepeatingGroup()
-    relatedSym.Add().SetSymbol(symbol)
-    request.SetNoRelatedSym(relatedSym)
-
-    queryHeader(request.Header)
-
-    e.Callbacks[requestId] = make(chan interface{})
-    defer delete(e.Callbacks, requestId)
-
-    go quickfix.Send(request)
-
-    fmt.Printf("\tWaiting response for request %+v", request)
-    res := (<- e.Callbacks[requestId]).(fix42md.MarketDataSnapshotFullRefresh)
-    fmt.Printf("\tResponse recieved: %+v", requestId, res)
-    return res
 }

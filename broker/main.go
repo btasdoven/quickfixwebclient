@@ -9,16 +9,17 @@ import (
 
     "github.com/quickfixgo/quickfix/enum"
     "html/template"
+    init2 "github.com/btasdoven/quickfixwebclient/broker/initiator"
 )
 
-var initiator Initiator
+var initiator init2.Initiator
 
 func restStockHandler(w http.ResponseWriter, r *http.Request) {
     symbolReq := r.URL.Query().Get("symbol")
     fmt.Printf("sym: %v", symbolReq)
     reqId := time.Now().String()
 
-    msg := initiator.queryMarketDataRequest42(reqId, symbolReq)
+    msg := initiator.QueryMarketDataRequest42(reqId, symbolReq)
 
     symbol, _ := msg.GetSymbol()
     noMDEntries, _ := msg.GetNoMDEntries()
@@ -60,7 +61,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	initiator = NewInitiator()
+	initiator = init2.NewInitiator()
     defer initiator.Stop()
 
     r := mux.NewRouter()
@@ -69,7 +70,7 @@ func main() {
 
     srv := &http.Server{
         Handler:      r,
-        Addr:         "localhost:8080",
+        Addr:         "localhost:9898",
         // Good practice: enforce timeouts for servers you create!
         WriteTimeout: 15 * time.Second,
         ReadTimeout:  15 * time.Second,

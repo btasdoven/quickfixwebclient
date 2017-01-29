@@ -70,9 +70,9 @@ func (e *executor) OnFIX42MarketDataRequest(msg fix42mdr.MarketDataRequest, sess
 
     noRelatedSym, _ := msg.GetNoRelatedSym()
 
-    len := noRelatedSym.Len()
+    length := noRelatedSym.Len()
 
-    if len <= 0 {
+    if length <= 0 {
         return
     }
 
