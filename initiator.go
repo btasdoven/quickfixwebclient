@@ -24,7 +24,7 @@ type Initiator struct {
 func NewInitiator() (app Initiator) {
     flag.Parse()
 
-    cfgFileName := path.Join("config", "Initiator.cfg")
+    cfgFileName := path.Join("config", "initiator.cfg")
     if flag.NArg() > 0 {
         cfgFileName = flag.Arg(0)
     }
