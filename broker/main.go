@@ -10,6 +10,8 @@ import (
     "github.com/quickfixgo/quickfix/enum"
     "html/template"
     init2 "github.com/btasdoven/quickfixwebclient/broker/initiator"
+    "strconv"
+    "os"
 )
 
 var initiator init2.Initiator
@@ -47,6 +49,22 @@ func restStockHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+func restOrderSingle(w http.ResponseWriter, r *http.Request) {
+    symbolReq := r.URL.Query().Get("symbol")
+    quantityReq, _ := strconv.Atoi(r.URL.Query().Get("quantity"))
+
+    fmt.Printf("sym: %v ,q: %v", symbolReq, quantityReq)
+    orderId := time.Now().String()
+
+    msg := initiator.QueryOrderSingleRequest(orderId, symbolReq, quantityReq, 43)
+
+    cumQty, _ := msg.GetCumQty()
+    leavesQty, _ := msg.GetLeavesQty()
+    lastPrice, _ := msg.GetLastPx()
+
+    fmt.Fprintf(w, "Executed: %v, Remaining: %v, Last Price: %v\n", cumQty, leavesQty, lastPrice)
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
     t, _ := template.New("").ParseFiles("home.tpl")
     err := t.ExecuteTemplate(w, "home.tpl", nil)
@@ -63,6 +81,7 @@ func main() {
     r := mux.NewRouter()
     r.HandleFunc("/", handler)
     r.HandleFunc("/marketData", restStockHandler)
+    r.HandleFunc("/orderSingle", restOrderSingle)
 
     srv := &http.Server{
         Handler:      r,
@@ -72,5 +91,27 @@ func main() {
         ReadTimeout:  15 * time.Second,
     }
 
-    srv.ListenAndServe()
+    certFile := "/etc/letsencrypt/live/btasdoven.com/cert.pem"
+    keyFile := "/etc/letsencrypt/live/btasdoven.com/privkey.pem"
+
+    if _, err := os.Stat(certFile); os.IsNotExist(err) {
+        certFile = ""
+    }
+
+    if _, err := os.Stat(keyFile); os.IsNotExist(err) {
+        keyFile = ""
+    }
+
+    var err error
+    if certFile != "" && keyFile != "" {
+        fmt.Printf("Starting HTTPS server\n")
+        err = srv.ListenAndServeTLS(certFile, keyFile)
+    } else {
+        fmt.Printf("Starting HTTP server\n")
+        err = srv.ListenAndServe()
+    }
+
+    if err != nil {
+        panic(err)
+    }
 }

@@ -14,13 +14,32 @@
                         $("#result").text( data );
                     });
                 });
+
+                $("#OrderSingle").on('click', function() {
+                    var symbol = $("#symbol2").val();
+                    var quantity = $("#order_quantity").val();
+
+                    $.get("/orderSingle?symbol=" + symbol + "&quantity=" + quantity, function( data ) {
+                        $("#result2").text( data );
+                    });
+                });
             });
 
         </script>
     </head>
     <body>
-        <input id="symbol" type="text" plceholder="Symbol"></input> <input value="Get Market Data" id="GetMarketData" type="button"></input>
+        <input id="symbol" type="text" placeholder="Symbol"></input>
+        <input value="Get Market Data" id="GetMarketData" type="button"></input>
         <pre id="result">
+
+        </pre>
+
+        <hr/>
+
+        <input id="symbol2" type="text" placeholder="Symbol"></input>
+        <input id="order_quantity" type="number" placeholder="Order Quantity"></input>
+        <input value="Order Single" id="OrderSingle" type="button"></input>
+        <pre id="result2">
 
         </pre>
     </body>

@@ -10,6 +10,7 @@ import (
     "github.com/quickfixgo/quickfix"
     
     fix42md "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh"
+    fix42er "github.com/quickfixgo/quickfix/fix42/executionreport"
 )
 
 //Initiator implements the quickfix.Application interface
@@ -42,6 +43,7 @@ func NewInitiator() (app Initiator) {
     app = Initiator{MessageRouter: quickfix.NewMessageRouter(), Callbacks: make(map[string]chan interface{})}
 
     app.AddRoute(fix42md.Route(app.OnFIX42MarketData))
+    app.AddRoute(fix42er.Route(app.OnFIX42ExecutionReport))
 
     fileLogFactory, err := quickfix.NewFileLogFactory(appSettings)
 
