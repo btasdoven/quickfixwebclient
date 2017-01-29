@@ -48,16 +48,12 @@ func restStockHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-    fmt.Printf("req")
     t, _ := template.New("").ParseFiles("home.tpl")
-    fmt.Printf("req 2")
     err := t.ExecuteTemplate(w, "home.tpl", nil)
 
     if err != nil {
         panic(err)
     }
-
-    fmt.Printf("req 3")
 }
 
 func main() {
@@ -70,7 +66,7 @@ func main() {
 
     srv := &http.Server{
         Handler:      r,
-        Addr:         "localhost:9898",
+        Addr:         ":9898",
         // Good practice: enforce timeouts for servers you create!
         WriteTimeout: 15 * time.Second,
         ReadTimeout:  15 * time.Second,
