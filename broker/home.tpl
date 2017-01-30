@@ -8,13 +8,20 @@
         <script>
             $( document ).ready(function() {
                 $("#GetMarketData").on('click', function() {
+                    var start_time = new Date().getTime();
+
                     var symbol = $("#symbol").val();
                     $.get("/marketData?symbol=" + symbol, function( data ) {
                         $("#result").text(data);
+
+                        var request_time = new Date().getTime() - start_time;
+                        $("#timerbox").text("Request took " + request_time + "ms to complete.")
                     });
                 });
 
                 $("#OrderSingle").on('click', function() {
+                    var start_time = new Date().getTime();
+
                     var symbol = $("#symbol2").val();
                     var quantity = $("#order_quantity").val();
                     var limit = $("#order_limit").val();
@@ -26,6 +33,9 @@
 
                     $.get(uri, function( data ) {
                         $("#result2").text(data);
+
+                        var request_time = new Date().getTime() - start_time;
+                        $("#timerbox").text("Request took " + request_time + "ms to complete.")
                     });
                 });
             });
@@ -33,6 +43,7 @@
         </script>
     </head>
     <body>
+        <pre id="timerbox"></pre>
         <input id="symbol" type="text" placeholder="Symbol" value="MSFT"></input>
         <input value="Get Market Data" id="GetMarketData" type="button"></input>
         <pre id="result">
