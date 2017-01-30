@@ -1,17 +1,16 @@
 package main
 
 import (
+    "html/template"
     "net/http"
     "time"
     "fmt"
-
-    mux "github.com/gorilla/mux"
-
-    "github.com/quickfixgo/quickfix/enum"
-    "html/template"
-    init2 "github.com/btasdoven/quickfixwebclient/broker/initiator"
     "strconv"
     "os"
+
+    init2 "github.com/btasdoven/quickfixwebclient/broker/initiator"
+    mux "github.com/gorilla/mux"
+    "github.com/quickfixgo/quickfix/enum"
 )
 
 var initiator init2.Initiator
@@ -52,17 +51,25 @@ func restStockHandler(w http.ResponseWriter, r *http.Request) {
 func restOrderSingle(w http.ResponseWriter, r *http.Request) {
     symbolReq := r.URL.Query().Get("symbol")
     quantityReq, _ := strconv.Atoi(r.URL.Query().Get("quantity"))
+    limitReq, _ := strconv.ParseFloat(r.URL.Query().Get("limit"), 64)
 
-    fmt.Printf("sym: %v ,q: %v", symbolReq, quantityReq)
+    fmt.Printf("sym: %v ,q: %v, limit: %v", symbolReq, quantityReq, limitReq)
+
     orderId := time.Now().String()
-
-    msg := initiator.QueryOrderSingleRequest(orderId, symbolReq, quantityReq, 43)
+    msg := initiator.QueryOrderSingleRequest(orderId, symbolReq, quantityReq, limitReq)
 
     cumQty, _ := msg.GetCumQty()
     leavesQty, _ := msg.GetLeavesQty()
     lastPrice, _ := msg.GetLastPx()
+    lastShares, _ := msg.GetLastShares()
+    status, _ := msg.GetOrdStatus()
 
-    fmt.Fprintf(w, "Executed: %v, Remaining: %v, Last Price: %v\n", cumQty, leavesQty, lastPrice)
+    fmt.Fprintf(w, "status: %v, Executed: %v, Remaining: %v, Last Price: %v, Last Shares: %v\n",
+        status,
+        cumQty,
+        leavesQty,
+        lastPrice,
+        lastShares)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {

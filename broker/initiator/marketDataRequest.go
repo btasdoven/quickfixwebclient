@@ -12,7 +12,9 @@ import (
 
 func (e *Initiator) OnFIX42MarketData(msg fix42md.MarketDataSnapshotFullRefresh, sessionID quickfix.SessionID) (reject quickfix.MessageRejectError) {
     reqId, _ := msg.GetMDReqID()
+    e.lock.Lock()
     e.Callbacks[reqId] <- msg
+    e.lock.Unlock()
     return
 }
 
@@ -37,7 +39,9 @@ func (e Initiator) QueryMarketDataRequest42(requestId string, symbol string) fix
 
     queryHeader(request.Header)
 
+    e.lock.Lock()
     e.Callbacks[requestId] = make(chan interface{})
+    e.lock.Unlock()
     defer delete(e.Callbacks, requestId)
 
     go quickfix.Send(request)

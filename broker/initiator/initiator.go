@@ -4,6 +4,7 @@ import (
     "flag"
     "fmt"
     "os"
+    "sync"
     "path"
 
     "github.com/quickfixgo/quickfix/field"
@@ -18,6 +19,7 @@ type Initiator struct {
     *quickfix.MessageRouter
     Initiator *quickfix.Initiator
     Callbacks map[string]chan interface{}
+    lock sync.RWMutex
 }
 
 func NewInitiator() (app Initiator) {

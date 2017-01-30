@@ -20,13 +20,49 @@ import (
     fix42er "github.com/quickfixgo/quickfix/fix42/executionreport"
     fix42mdr "github.com/quickfixgo/quickfix/fix42/marketdatarequest"
     fix42md  "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh"
-
 )
 
 type executor struct {
     orderID int
     execID  int
     *quickfix.MessageRouter
+    quotes map[string]*Quote
+}
+
+type BidAsk struct {
+    price   decimal.Decimal
+    size    decimal.Decimal
+}
+
+type Quote struct {
+    symbol      string
+    trade       BidAsk
+    bids        []BidAsk
+    asks        []BidAsk
+}
+
+func (e *executor) getQuote(symbol string) *Quote {
+    if _, ok := e.quotes[symbol]; !ok {
+        stock, _ := finance.GetQuote(symbol)
+        e.quotes[symbol] = &Quote{
+            symbol: symbol,
+            trade: BidAsk{
+                price: stock.LastTradePrice,
+                size: decimal.New(int64(stock.LastTradeSize), 0)},
+            asks: make([]BidAsk, 2),
+            bids: make([]BidAsk, 1),
+        }
+
+        e.quotes[symbol].asks[0].price = stock.Ask
+        e.quotes[symbol].bids[0].price = stock.Bid
+        e.quotes[symbol].asks[0].size = decimal.New(int64(stock.AskSize), 0)
+        e.quotes[symbol].bids[0].size = decimal.New(int64(stock.BidSize), 0)
+
+        e.quotes[symbol].asks[1].price = stock.Ask.Add(decimal.New(4, 0))
+        e.quotes[symbol].asks[1].size = decimal.New(12, 0)
+    }
+
+    return e.quotes[symbol]
 }
 
 func newExecutor() *executor {
@@ -34,6 +70,7 @@ func newExecutor() *executor {
     e.AddRoute(fix42nos.Route(e.OnFIX42NewOrderSingle))
     e.AddRoute(fix42mdr.Route(e.OnFIX42MarketDataRequest))
 
+    e.quotes = make(map[string]*Quote)
     return e
 }
 
@@ -79,8 +116,7 @@ func (e *executor) OnFIX42MarketDataRequest(msg fix42mdr.MarketDataRequest, sess
     symbol, _ := noRelatedSym.Get(0).GetSymbol()
     fmt.Printf("\tSymbol: %+v\n", symbol)
 
-    stock, _ := finance.GetQuote(symbol)
-
+    stock := e.getQuote(symbol)
     fmt.Printf("\tStock: %+v\n", stock)
 
     noMDEntryTypes, _ := msg.GetNoMDEntryTypes()
@@ -92,14 +128,22 @@ func (e *executor) OnFIX42MarketDataRequest(msg fix42mdr.MarketDataRequest, sess
 
         switch noMDEntryType {
         case enum.MDEntryType_BID:
-            noMDEntries.Get(i).SetMDEntryPx(decimal.Decimal(stock.Bid), 5)
-            noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(float64(stock.BidSize)), 5)
+            bid := BidAsk{}
+            if len(stock.bids) > 0 {
+                bid = stock.bids[0]
+            }
+            noMDEntries.Get(i).SetMDEntryPx(bid.price, 5)
+            noMDEntries.Get(i).SetMDEntrySize(bid.size, 5)
         case enum.MDEntryType_OFFER:
-            noMDEntries.Get(i).SetMDEntryPx(decimal.Decimal(stock.Ask), 5)
-            noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(float64(stock.AskSize)), 5)
+            ask := BidAsk{}
+            if len(stock.asks) > 0 {
+                ask = stock.asks[0]
+            }
+            noMDEntries.Get(i).SetMDEntryPx(ask.price, 5)
+            noMDEntries.Get(i).SetMDEntrySize(ask.size, 5)
         case enum.MDEntryType_TRADE:
-            noMDEntries.Get(i).SetMDEntryPx(decimal.Decimal(stock.LastTradePrice), 5)
-            noMDEntries.Get(i).SetMDEntrySize(decimal.NewFromFloat(float64(stock.LastTradeSize)), 5)
+            noMDEntries.Get(i).SetMDEntryPx(stock.trade.price, 5)
+            noMDEntries.Get(i).SetMDEntrySize(stock.trade.size, 5)
         }
     }
 
@@ -148,23 +192,62 @@ func (e *executor) OnFIX42NewOrderSingle(msg fix42nos.NewOrderSingle, sessionID 
         return
     }
 
+    stock := e.getQuote(symbol)
+    leavesQty := orderQty
+    orderStatus := enum.OrdStatus_NEW
+    totalPrice := decimal.Zero
+    lastPrice := decimal.Zero
+    lastShares := decimal.Zero
+
+    switch side {
+    case enum.Side_BUY:
+        for leavesQty.IntPart() > 0 && len(stock.asks) > 0 && stock.asks[0].price.Cmp(price) <= 0 {
+            lastShares = decimal.Min(stock.asks[0].size, leavesQty)
+            lastPrice = stock.asks[0].price
+
+            leavesQty = leavesQty.Sub(lastShares)
+            totalPrice = totalPrice.Add(lastPrice)
+
+            stock.trade.price = lastPrice
+            stock.trade.size = lastShares
+            stock.asks[0].size = stock.asks[0].size.Sub(lastShares)
+            if stock.asks[0].size.Cmp(decimal.Zero) == 0 {
+                stock.asks = stock.asks[1:]
+            }
+        }
+    }
+
+    execQty := orderQty.Sub(leavesQty)
+    avgPrice := decimal.Zero
+    if execQty.Cmp(decimal.Zero) != 0 {
+        avgPrice = totalPrice.Div(execQty)
+    }
+
+    if execQty.Equals(decimal.Zero) {
+        orderStatus = enum.OrdStatus_CALCULATED
+    } else if execQty.Equals(orderQty) {
+        orderStatus = enum.OrdStatus_FILLED
+    } else {
+        orderStatus = enum.OrdStatus_PARTIALLY_FILLED
+    }
+
     execReport := fix42er.New(
         e.genOrderID(),
         e.genExecID(),
         field.NewExecTransType(enum.ExecTransType_NEW),
         field.NewExecType(enum.ExecType_FILL),
-        field.NewOrdStatus(enum.OrdStatus_FILLED),
+        field.NewOrdStatus(orderStatus),
         field.NewSymbol(symbol),
         field.NewSide(side),
-        field.NewLeavesQty(decimal.Zero, 2),
-        field.NewCumQty(orderQty, 2),
-        field.NewAvgPx(price, 2),
+        field.NewLeavesQty(leavesQty, 2),
+        field.NewCumQty(execQty, 2),
+        field.NewAvgPx(avgPrice, 2),
     )
 
     execReport.SetClOrdID(clOrdID)
     execReport.SetOrderQty(orderQty, 2)
-    execReport.SetLastShares(orderQty, 2)
-    execReport.SetLastPx(price, 2)
+    execReport.SetLastShares(lastShares, 2)
+    execReport.SetLastPx(lastPrice, 2)
 
     if msg.HasAccount() {
         acct, err := msg.GetAccount()

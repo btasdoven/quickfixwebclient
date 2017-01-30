@@ -14,11 +14,14 @@ import (
 
 func (e *Initiator) OnFIX42ExecutionReport(msg fix42er.ExecutionReport, sessionID quickfix.SessionID) (reject quickfix.MessageRejectError) {
     orderId, _ := msg.GetClOrdID()
+
+    e.lock.Lock()
     e.Callbacks[orderId] <- msg
+    e.lock.Unlock()
     return
 }
 
-func (e Initiator) QueryOrderSingleRequest(orderId string, symbol string, quantity int, limit int) fix42er.ExecutionReport {
+func (e Initiator) QueryOrderSingleRequest(orderId string, symbol string, quantity int, limit float64) fix42er.ExecutionReport {
     request := fix42nos.New(
         field.NewClOrdID(orderId),
         field.NewHandlInst(enum.HandlInst_MANUAL_ORDER_BEST_EXECUTION),
@@ -28,11 +31,13 @@ func (e Initiator) QueryOrderSingleRequest(orderId string, symbol string, quanti
         field.NewOrdType(enum.OrdType_LIMIT))
 
     request.SetOrderQty(decimal.New(int64(quantity), 0), 5)
-    request.SetPrice(decimal.New(int64(limit), 0), 0)
+    request.SetPrice(decimal.NewFromFloat(limit), 0)
 
     queryHeader(request.Header)
 
+    e.lock.Lock()
     e.Callbacks[orderId] = make(chan interface{})
+    e.lock.Unlock()
     defer delete(e.Callbacks, orderId)
 
     go quickfix.Send(request)
