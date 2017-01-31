@@ -6,12 +6,11 @@ import (
     "os"
     "sync"
     "path"
-
-    "github.com/quickfixgo/quickfix/field"
-    "github.com/quickfixgo/quickfix"
     
     fix42md "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh"
     fix42er "github.com/quickfixgo/quickfix/fix42/executionreport"
+    "github.com/quickfixgo/quickfix"
+    "github.com/quickfixgo/quickfix/field"
 )
 
 //Initiator implements the quickfix.Application interface

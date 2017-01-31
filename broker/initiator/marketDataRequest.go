@@ -1,13 +1,13 @@
 package initiator
 
 import (
-    "github.com/quickfixgo/quickfix"
-    "github.com/quickfixgo/quickfix/field"
-    "github.com/quickfixgo/quickfix/enum"
     "fmt"
 
     fix42md "github.com/quickfixgo/quickfix/fix42/marketdatasnapshotfullrefresh"
     fix42mdr "github.com/quickfixgo/quickfix/fix42/marketdatarequest"
+    "github.com/quickfixgo/quickfix"
+    "github.com/quickfixgo/quickfix/field"
+    "github.com/quickfixgo/quickfix/enum"
 )
 
 func (e *Initiator) OnFIX42MarketData(msg fix42md.MarketDataSnapshotFullRefresh, sessionID quickfix.SessionID) (reject quickfix.MessageRejectError) {
@@ -42,6 +42,7 @@ func (e Initiator) QueryMarketDataRequest42(requestId string, symbol string) fix
     e.lock.Lock()
     e.Callbacks[requestId] = make(chan interface{})
     e.lock.Unlock()
+    defer close(e.Callbacks[requestId])
     defer delete(e.Callbacks, requestId)
 
     go quickfix.Send(request)
