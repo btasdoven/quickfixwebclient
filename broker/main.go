@@ -11,11 +11,9 @@ import (
     init2 "github.com/btasdoven/quickfixwebclient/broker/initiator"
     mux "github.com/gorilla/mux"
     "github.com/quickfixgo/quickfix/enum"
-    "github.com/gorilla/sessions"
 )
 
 var initiator init2.Initiator
-var store = sessions.NewCookieStore([]byte("something-very-secret"))
 
 var orders []*Order
 
@@ -72,6 +70,7 @@ func restOrderSingle(w http.ResponseWriter, r *http.Request) {
 
     cumQty, _ := msg.GetCumQty()
     leavesQty, _ := msg.GetLeavesQty()
+    price, _ := msg.GetPrice()
     lastPrice, _ := msg.GetLastPx()
     lastShares, _ := msg.GetLastShares()
     status, _ := msg.GetOrdStatus()
@@ -84,10 +83,11 @@ func restOrderSingle(w http.ResponseWriter, r *http.Request) {
 
     orders = append(orders, &order)
 
-    fmt.Fprintf(w, "Status: %v, Executed: %v, Remaining: %v, Last Price: %v, Last Shares: %v\n",
+    fmt.Fprintf(w, "Status: %v, Executed: %v, Remaining: %v, Price: %v, Last Price: %v, Last Shares: %v\n",
         status,
         cumQty,
         leavesQty,
+        price,
         lastPrice,
         lastShares)
 }
@@ -103,12 +103,36 @@ func restOrders(w http.ResponseWriter, r *http.Request) {
             lastPrice, _ := msg.GetLastPx()
             lastShares, _ := msg.GetLastShares()
             status, _ := msg.GetOrdStatus()
+            price, _ := msg.GetPrice()
+            side, _ := msg.GetSide()
 
-            fmt.Fprintf(w, "Symbol: %v, Status: %v, Executed: %v, Remaining: %v, Last Price: %v, Last Shares: %v\n",
+            var statusStr string
+
+            switch status {
+            case enum.OrdStatus_PARTIALLY_FILLED:
+                statusStr = "PARTIALLY FILLED"
+            case enum.OrdStatus_FILLED:
+                statusStr = "FILLED"
+            case enum.OrdStatus_NEW:
+                statusStr = "NEW"
+            }
+
+            var sideStr string
+
+            switch side {
+            case enum.Side_BUY:
+                sideStr = "BUY"
+            case enum.Side_SELL:
+                sideStr = "SELL"
+            }
+
+            fmt.Fprintf(w, "Symbol: %v, Side: %v, Status: %v, Executed: %v, Remaining: %v, Price: %v, Last Price: %v, Last Shares: %v\n",
                 order.symbol,
-                status,
+                sideStr,
+                statusStr,
                 cumQty,
                 leavesQty,
+                price,
                 lastPrice,
                 lastShares)
         }
